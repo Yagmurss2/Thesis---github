@@ -1,0 +1,138 @@
+import pandas as pd
+import re
+
+# Sample data - REPLACE THIS WITH pd.read_csv("your_file.csv")
+data = {'City': ['amsterdam', 'rotterdam', 'den haag', 'haag', 'the hague',
+                 'utrecht', 'berlijn', 'münchen', 'unknown city', 'Delft']}
+df = pd.read_excel("/content/standardized_cities (4).xlsx")
+
+# Standardization dictionary (Key: lowercase, Value: standardized form)
+city_standardization = {
+    # Netherlands
+    'amsterdam': 'Amsterdam',
+    'rotterdam': 'Rotterdam',
+    'den haag': 'Den Haag',
+    "'s-hertogenbosch": "'s-Hertogenbosch",
+    'utrecht': 'Utrecht',
+    'eindhoven': 'Eindhoven',
+    'groningen': 'Groningen',
+    'tilburg': 'Tilburg',
+    'almere': 'Almere',
+    'breda': 'Breda',
+    'nijmegen': 'Nijmegen',
+    'delft': 'Delft',
+    'dordrecht': 'Dordrecht',
+    'bleekersdijk': 'Bleekersdijk',
+    'kralingen': 'Kralingen',
+    'oude dijk': 'Oude Dijk',
+    'maastricht': 'Maastricht',
+    'schveningnen': 'Scheveningen',  # Common typo fix
+    'haarlem': 'Haarlem',
+    'arnhem': 'Arnhem',
+    'bussum': 'Bussum',
+    'schidam': 'Schiedam',
+    'leiden': 'Leiden',
+    'zwolle': 'Zwolle',
+    'enschede': 'Enschede',
+    'amersfoort': 'Amersfoort',
+    'apeldoorn': 'Apeldoorn',
+    'hilversum': 'Hilversum',
+    'heerlen': 'Heerlen',
+    'venlo': 'Venlo',
+    'alkmaar': 'Alkmaar',
+    'hoorn': 'Hoorn',
+    'zaandam': 'Zaandam',
+    'lelystad': 'Lelystad',
+    'emmen': 'Emmen',
+    'heerhugowaard': 'Heerhugowaard',
+    'purmerend': 'Purmerend',
+    'roosendaal': 'Roosendaal',
+    'helmond': 'Helmond',
+    'oss': 'Oss',
+    'scheveningen': 'Scheveningen', # Ensure this is lowercase key
+
+    # Germany (Duitsland)
+    'berlijn': 'Berlijn',
+    'hamburg': 'Hamburg',
+    'münchen': 'München',
+    'keulen': 'Keulen',
+    'frankfurt': 'Frankfurt',
+    'düsseldorf': 'Düsseldorf',
+    'stuttgart': 'Stuttgart',
+    'bremen': 'Bremen',
+    'hannover': 'Hannover',
+    'neurenberg': 'Neurenberg',
+    'dresden': 'Dresden',
+    'leipzig': 'Leipzig',
+    'essen': 'Essen',
+    'dortmund': 'Dortmund',
+    'bonn': 'Bonn',
+    'mainz': 'Mainz',
+    'kiel': 'Kiel',
+    'aachen': 'Aken',
+
+    # France (Frankrijk)
+    'parijs': 'Parijs',
+    'marseille': 'Marseille',
+    'lyon': 'Lyon',
+    'toulouse': 'Toulouse',
+    'nice': 'Nice',
+    'nantes': 'Nantes',
+    'straatsburg': 'Straatsburg',
+    'montpellier': 'Montpellier',
+    'bordeaux': 'Bordeaux',
+    'lille': 'Rijsel',
+    'rennes': 'Rennes',
+    'reims': 'Reims',
+    'le havre': 'Le Havre',
+    'grenoble': 'Grenoble',
+    'dijon': 'Dijon',
+    'angers': 'Angers',
+
+    # Belgium
+    'bruge': 'Brugge',  # Common typo fix
+    'antwerpen': 'Antwerpen',
+    'brussels': 'Brussel',  # English to Dutch
+    'brussel': 'Brussel',
+
+    # Add more cities as needed
+}
+
+def standardize_city_name(city):
+    if pd.isna(city):
+        return city
+
+    city_str = str(city).strip().lower()
+
+    # Special handling for Den Haag
+    if any(term in city_str for term in ['haag', 'hague', 'hag']):
+        return 'Den Haag'
+
+    # Try exact match
+    if city_str in city_standardization:
+        return city_standardization[city_str]
+
+    # Try to find closest match (handles some spelling variations)
+    for city_pattern, standardized in city_standardization.items():
+        if city_pattern in city_str or city_str in city_pattern:
+            return standardized
+
+    # Try to match without special characters
+    simple_city = re.sub(r'[^a-z]', '', city_str)
+    for city_pattern, standardized in city_standardization.items():
+        simple_pattern = re.sub(r'[^a-z]', '', city_pattern)
+        if simple_city == simple_pattern:
+            return standardized
+
+    # Return original if no match found
+    return str(city).strip()
+
+# Apply standardization
+df['Place Standartized'] = df['Place'].apply(standardize_city_name)
+
+# Show results
+print("Standardization results:")
+print(df[['Place', 'Place Standartized']])
+
+# Save to new CSV
+df.to_excel('standardized_cities.xlsx', index=False)
