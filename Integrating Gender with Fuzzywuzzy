@@ -1,0 +1,31 @@
+import pandas as pd
+from fuzzywuzzy import process
+
+# ✅ Load your Excel files
+catalog = pd.read_excel("")  # your dataset
+female_df = pd.read_excel("")  # female artists
+
+# ✅ Clean and prepare names
+catalog["Artist"] = catalog["Artist"].astype(str).str.strip()
+female_df["Artist"] = female_df["Artist"].astype(str).str.strip()
+
+# ✅ Create list of female names
+female_names = female_df["Artist"].dropna().unique().tolist()
+
+# ✅ Ensure Gender column exists
+if "Gender" not in catalog.columns:
+    catalog["Gender"] = ""
+catalog["Gender"] = catalog["Gender"].astype(str)
+
+# ✅ Fuzzy match and assign gender
+for i, row in catalog.iterrows():
+    artist_name = row["Artist"]
+
+    match, score = process.extractOne(artist_name, female_names)
+
+    if score >= 90:
+        catalog.at[i, "Gender"] = "Female"
+
+# ✅ (Optional) Save the result
+# catalog.to_excel("catalog_with_gender_fuzzy.xlsx", index=False)
+catalog.to_excel("name.py", index=False)
