@@ -1,0 +1,79 @@
+import pandas as pd
+
+# === Step 1: Load and Normalize Data ===
+def load_and_prepare(path, is_cleaned=True):
+    df = pd.read_excel(path)
+    df["Price"] = df["Price"].fillna("unknown").astype(str).str.lower().str.strip()
+    df["PDF Name"] = df["PDF Name"].astype(str).str.lower().str.strip()
+    df["Number"] = df["Number"].astype(str).str.strip()
+    df["Unique_ID"] = df["PDF Name"] + "_" + df["Number"]
+    if is_cleaned:
+        df.rename(columns={"Price": "Price_cleaned"}, inplace=True)
+    else:
+        df.rename(columns={"Price": "Price_original"}, inplace=True)
+    return df
+
+# === Step 2: Merge and Compare ===
+def merge_and_compare(cleaned_df, original_df):
+    merged = pd.merge(
+        cleaned_df,
+        original_df[["Unique_ID", "Price_original"]],
+        on="Unique_ID",
+        how="left"
+    )
+    merged["match"] = merged["Price_cleaned"] == merged["Price_original"]
+    return merged
+
+# === Step 3: Split Groups ===
+def split_groups(merged_df):
+    matches = merged_df[merged_df["match"] == True]
+    mismatches = merged_df[(merged_df["match"] == False) & (merged_df["Price_original"].notna())]
+    not_found = merged_df[merged_df["Price_original"].isna()]
+    return matches, mismatches, not_found
+
+# === Step 4: Calculate Accuracy ===
+def calculate_accuracy(matches, mismatches, not_found, total):
+    total_errors = len(mismatches) + len(not_found)
+    accuracy = ((total - total_errors) / total) * 100
+    return accuracy
+
+# === Step 5: Save Outputs ===
+def save_outputs(matches, mismatches, not_found, merged_df):
+    matches.to_excel("matches.xlsx", index=False)
+    mismatches.to_excel("mismatches.xlsx", index=False)
+    not_found.to_excel("not_found_in_extraction.xlsx", index=False)
+    merged_df.to_excel("full_comparison_results.xlsx", index=False)
+
+# === Main Pipeline ===
+def evaluate_price_extraction(original_path, cleaned_path):
+    cleaned_df = load_and_prepare(cleaned_path, is_cleaned=True)
+    original_df = load_and_prepare(original_path, is_cleaned=False)
+
+    merged_df = merge_and_compare(cleaned_df, original_df)
+    matches, mismatches, not_found = split_groups(merged_df)
+    total = len(cleaned_df)
+    accuracy = calculate_accuracy(matches, mismatches, not_found, total)
+
+    # === Summary ===
+    print(f"\n📊 EVALUATION SUMMARY:")
+    print(f"📄 Total entries in cleaned (gold standard): {total}")
+    print(f"✅ Correct matches: {len(matches)}")
+    print(f"❌ Wrong matches (value mismatch): {len(mismatches)}")
+    print(f"🕳️ Missing entries (no match at all): {len(not_found)}")
+    print(f"🎯 Final true accuracy: {accuracy:.2f}%\n")
+
+    # === Preview sample results ===
+    print("⚠️ First 5 mismatches:")
+    print(mismatches[["PDF Name", "Number", "Price_cleaned", "Price_original"]].head())
+
+    print("\n❓ First 5 missing entries:")
+    print(not_found[["PDF Name", "Number", "Price_cleaned"]].head())
+
+    # === Save output files
+    save_outputs(matches, mismatches, not_found, merged_df)
+
+# === Run the pipeline with your file paths
+evaluate_price_extraction(
+    original_path="file.xlsx",
+    cleaned_path="cleaned_file.xlsx"
+)
