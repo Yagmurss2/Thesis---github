@@ -1,0 +1,62 @@
+import pandas as pd
+from scipy.stats import mannwhitneyu
+
+# Load your dataset
+# Make sure you have uploaded your file to Colab or update the path
+df = pd.read_excel("file") # Replace with your actual file name
+
+# --- Data Cleaning and Preparation ---
+
+# Standardize 'Gender' to lowercase and remove leading/trailing whitespace
+# This handles variations like 'Female', 'female', ' Female '
+df['Gender'] = df['Gender'].astype(str).str.lower().str.strip()
+
+# Convert 'Price' to numeric.
+# errors='coerce' will turn any values that cannot be converted into NaN (Not a Number).
+df['Price'] = pd.to_numeric(df['Price'], errors='coerce')
+
+# Remove rows where 'Gender' is not 'female' or 'male'
+# and remove rows where 'Price' is NaN (missing or invalid price)
+df_filtered = df[
+    df['Gender'].isin(['female', 'male']) & # Keep only 'female' or 'male' genders
+    df['Price'].notna()                   # Keep only rows with valid prices
+].copy() # Use .copy() to avoid SettingWithCopyWarning
+
+# --- Separate Prices by Gender ---
+
+# Get the 'Price' values for 'female' artists
+female_prices = df_filtered[df_filtered['Gender'] == 'female']['Price']
+
+# Get the 'Price' values for 'male' artists
+male_prices = df_filtered[df_filtered['Gender'] == 'male']['Price']
+
+# --- Perform Mann-Whitney U Test ---
+
+# It's a good practice to check the sample sizes
+print(f"Number of female prices: {len(female_prices)}")
+print(f"Number of male prices: {len(male_prices)}")
+
+# Check if both groups have enough data points (usually at least 5 per group for reliability)
+if len(female_prices) < 5 or len(male_prices) < 5:
+    print("\n❗ Warning: Small sample size in one or both groups. Results may not be reliable.")
+    print("Mann-Whitney U test skipped due to insufficient data.")
+else:
+    # Run the Mann-Whitney U test
+    # alternative='two-sided' tests if distributions are different (not specifically greater or less)
+    u_stat, p_value = mannwhitneyu(female_prices, male_prices, alternative='two-sided')
+
+    # --- Output Results ---
+    print("\n--- Mann-Whitney U Test Results ---")
+    print(f"U statistic: {u_stat:.2f}") # Format to 2 decimal places
+    print(f"p-value: {p_value:.4f}")   # Format to 4 decimal places
+
+    # --- Interpretation Helper ---
+    alpha = 0.05 # Common significance level
+
+    print(f"\nSignificance level (alpha): {alpha}")
+    if p_value < alpha:
+        print(f"✅ The p-value ({p_value:.4f}) is less than alpha ({alpha}).")
+        print("Conclusion: There is a statistically significant difference in the price distributions between female and male artists.")
+    else:
+        print(f"❌ The p-value ({p_value:.4f}) is not less than alpha ({alpha}).")
+        print("Conclusion: There is no statistically significant evidence to suggest a difference in the price distributions between female and male artists.")
