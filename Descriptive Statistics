@@ -1,0 +1,46 @@
+
+import pandas as pd
+
+# 🔹 Load the Excel file
+df = pd.read_excel("file.xlsx")
+
+# 🔹 Clean Gender and Price columns
+df["Gender"] = df["Gender"].astype(str).str.strip()
+df["Price"] = pd.to_numeric(df["Price"], errors="coerce")  # Convert to numeric, NaNs if not valid
+
+# 🔹 Total count for percentage calculation
+total_artists = df["Gender"].notna().sum()
+
+# 🔹 Frequency counts (grouped by relevant labels)
+female_total = df["Gender"].isin(["female", "Female", "female-foreign"]).sum()
+male_total = df["Gender"].isin(["male", "male-foreign"]).sum()
+
+# 🔹 Percentages
+female_percent = (female_total / total_artists) * 100
+male_percent = (male_total / total_artists) * 100
+
+# 🔹 Dutch only (excluding foreign)
+df_dutch = df[df["Gender"].isin(["female", "Female", "male"])]
+
+# 🔹 Separate female and male
+female_df = df_dutch[df_dutch["Gender"].isin(["female", "Female"])]
+male_df = df_dutch[df_dutch["Gender"] == "male"]
+
+# 🔹 Descriptive statistics
+female_stats = female_df["Price"].describe()
+male_stats = male_df["Price"].describe()
+
+# 🔹 Output
+print("🎨 Artist Gender Percentages")
+print(f"Female (incl. foreign): {female_percent:.2f}%")
+print(f"Male (incl. foreign): {male_percent:.2f}%\n")
+
+print("🇳🇱 Dutch Artists Only:")
+print(f"Dutch Female Artists: {len(female_df)}")
+print(f"Dutch Male Artists: {len(male_df)}\n")
+
+print("📊 Descriptive Statistics for Price (Dutch Female Artists):")
+print(female_stats[["mean", "50%", "std"]])  # 50% is median
+
+print("\n📊 Descriptive Statistics for Price (Dutch Male Artists):")
+print(male_stats[["mean", "50%", "std"]])
