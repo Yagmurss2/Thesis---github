@@ -1,0 +1,36 @@
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Load data
+df = pd.read_excel("")
+
+# Clean and prepare
+df["Gender"] = df["Gender"].str.lower().str.strip()
+df = df[df["Gender"].isin(["male", "female"])]
+df["Price"] = pd.to_numeric(df["Price"], errors="coerce")
+df = df[df["Price"].notna() & (df["Price"] > 0)]
+
+# Log-transform price
+df["LogPrice"] = np.log(df["Price"])
+
+# KDE plot
+plt.figure(figsize=(10, 6))
+sns.kdeplot(data=df[df["Gender"] == "male"], x="LogPrice", label="Male", fill=True, alpha=0.5, color='green')
+sns.kdeplot(data=df[df["Gender"] == "female"], x="LogPrice", label="Female", fill=True, alpha=0.5, color='purple')
+
+# Optional: add median lines
+male_median = df[df["Gender"] == "male"]["LogPrice"].median()
+female_median = df[df["Gender"] == "female"]["LogPrice"].median()
+plt.axvline(male_median, color='blue', linestyle='--', alpha=0.6)
+plt.axvline(female_median, color='orange', linestyle='--', alpha=0.6)
+
+# Final touches
+plt.title("Kernel Density of Log Prices by Gender")
+plt.xlabel("Price")
+plt.ylabel("Density")
+plt.legend(title="Gender")
+plt.grid(True)
+plt.tight_layout()
+plt.show()
