@@ -1,0 +1,49 @@
+import pandas as pd
+
+# STEP 1: Load your Excel file
+df = pd.read_excel("file")  # Adjust path if needed
+
+# STEP 2: Filter for female artists
+df = df[df["Gender"].astype(str).str.lower() == "female"].copy()
+
+# STEP 3: Clean price column
+df["Price"] = pd.to_numeric(df["Price"], errors="coerce")
+df = df[df["Price"].notna() & (df["Price"] > 0)]
+
+# STEP 4: Standardize artist names
+df["Artist"] = df["Artist"].astype(str).str.strip().str.title()
+
+# STEP 5: Group by artist and calculate average price
+artist_avg = df.groupby("Artist")["Price"].mean().sort_values(ascending=False)
+total_value = artist_avg.sum()
+n_artists = len(artist_avg)
+
+# STEP 6: Build the concentration table
+thresholds = [0.50, 0.75, 0.90, 0.99]
+rows = []
+
+cumulative = artist_avg.cumsum()
+
+for t in thresholds:
+    cutoff_index = cumulative[cumulative <= total_value * t].shape[0]
+    artist_count = cutoff_index + 1
+    share_of_artists = artist_count / n_artists
+    rows.append({
+        "Market Value Share": f"{int(t * 100)}%",
+        "Share of Artists": f"{share_of_artists:.2%}",
+        "Number of Artists": artist_count,
+        "Total Market Value (€)": ""  # avoid NaN in earlier rows
+    })
+
+# Add the final row with total market value
+rows.append({
+    "Market Value Share": "Total",
+    "Share of Artists": "100%",
+    "Number of Artists": n_artists,
+    "Total Market Value (€)": f"{total_value:,.2f}"
+})
+
+# STEP 7: Create and show the table
+concentration_table = pd.DataFrame(rows)
+print("🎨 Market Concentration Table for Female Artists:")
+print(concentration_table.to_string(index=False))
