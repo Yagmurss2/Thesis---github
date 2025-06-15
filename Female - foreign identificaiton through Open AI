@@ -1,0 +1,49 @@
+import pandas as pd
+import time
+import openai
+
+# --- CONFIGURATION ---
+openai_api_key = "" Replace with your actual API key
+input_file = "file.xlsx"
+output_file = "checked_output_updated_females.xlsx"
+
+# --- OPENAI CLIENT SETUP ---
+client = openai.OpenAI(api_key=openai_api_key)
+
+# --- LOAD DATA ---
+df = pd.read_excel(input_file)
+df.columns = [col.capitalize() for col in df.columns]
+
+# --- GPT FUNCTION: checks if place includes any Dutch location ---
+def contains_dutch_city(place):
+    prompt = (
+        f"Does the following place description contain a city or location in the Netherlands? "
+        f"The input may include addresses or mixed text. "
+        f"Reply only with Yes or No: {place}"
+    )
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0,
+        )
+        answer = response.choices[0].message.content.strip().lower()
+        return "yes" in answer
+    except Exception as e:
+        print(f"Error checking {place}: {e}")
+        return False
+
+# --- STEP: Adjust female values to female-foreign when needed ---
+for idx, row in df.iterrows():
+    current_gender = str(row['Gender']).strip().lower()
+    place = str(row.get('Place', '')).strip()
+
+    if current_gender in ['female', 'f'] and place:
+        is_dutch = contains_dutch_city(place)
+        if not is_dutch:
+            df.at[idx, 'Gender'] = 'female-foreign'
+        time.sleep(0.4)
+
+# --- SAVE OUTPUT ---
+df.to_excel(output_file, index=False)
+print(f"✅ Done! Updated female entries. File saved to: {output_file}")
