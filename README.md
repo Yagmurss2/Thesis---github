@@ -2,14 +2,8 @@
 Revisiting the 19th century Art World : Computational Anlaysis of Women Artists in the Levende Meesters Exhibitions.
 This repository contains a pipeline for analyzing 19th-century exhibition records from an Excel dataset. The goal of this project is to extract, clean, and analyze data related to artists, artworks, and prices from these historical records, with a particular focus on understanding the representation and market value of female artists in my thesis.
 
-
-Dataset
-The analysis is based on an Excel file containing exhibition records from the 19th century. The dataset includes information such as artist names, artwork titles, prices, gender of the artist, exhibition details, and location.
-
-
 Pipeline Overview
-The pipeline consists of several steps implemented as Python scripts within a Jupyter notebook environment (like Google Colab). The main stages include:
-
+The pipelines consist of several steps implemented as Python scripts within a Jupyter notebook environment (like Google Colab). The main stages include:
 
 Data Loading and Initial Cleaning: Reading the raw exhibition data from Excel files and performing initial cleaning steps such as standardizing column names, handling missing values, and converting data types.
 Gender Identification and Standardization: Identifying and standardizing the gender of artists, including using external tools (like potentially the OpenAI API, as suggested by some code cells) for difficult cases and marking foreign artists.
